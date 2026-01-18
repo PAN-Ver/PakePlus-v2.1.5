@@ -1,32 +1,1243 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="styles.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus App</title>
-        <script type="module" src="/main.js" defer></script>
-    </head>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据验证比对工具 (优化版)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+/* 主色调 */
+--primary: #166534;
+--primary-light: #22c55e;
+--primary-dark: #059669;
 
-    <body>
-        <main class="container">
-            <h1>Welcome to PakePlus</h1>
-            <form class="row" id="greet-form">
-                <input id="inputValue" placeholder="Enter a something..." />
-            </form>
-            <div class="resultBox">
-                <span>result: </span>
-                <span id="result"></span>
-            </div>
-            <div class="invokeBox">
-                <button id="openUrl">open_url_browser</button>
-                <button id="openUrlNew">open_url_new</button>
-                <button id="runCommand">run_command</button>
-                <button id="downloadFile">download_file</button>
-                <button id="getExeDir">get_exe_dir</button>
-                <button id="getEnvVar">get_env_var</button>
-                <button id="findPort">find_port</button>
-            </div>
-        </main>
-    </body>
+/* 辅助色彩 */
+--unique1-color: #7c3aed;
+--unique2-color: #1e40af;
+--common-color: #0f766e;
+--duplicate1-color: #ea580c;
+--duplicate2-color: #dc2626;
+
+/* 功能按钮颜色 */
+--clear-color: #dc2626;
+--export-color: #10b981;
+--copy-bg-start: #3b82f6;
+--copy-bg-end: #2563eb;
+
+/* 中性色 */
+--light: #f8fafc;
+--dark: #1e293b;
+--gray: #64748b;
+--gray-light: #e2e8f0;
+--gray-dark: #334155;
+--bg: #f1f5f9;
+--card-bg: #ffffff;
+--border: #e2e8f0;
+
+/* 其他样式变量 */
+--shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+--shadow-hover: 0 6px 10px rgba(0, 0, 0, 0.1);
+--font-size-base: 14px;
+--radius-sm: 4px;
+--radius-md: 6px;
+--radius-lg: 8px;
+--transition: all 0.3s ease;
+}
+
+.dark-mode {
+--primary: #22c55e;
+--primary-light: #4ade80;
+--primary-dark: #16a34a;
+
+--unique1-color: #a855f7;
+--unique2-color: #3b82f6;
+--common-color: #2dd4bf;
+--duplicate1-color: #fb923c;
+--duplicate2-color: #f87171;
+
+--copy-bg-start: #3b82f6;
+--copy-bg-end: #2563eb;
+
+--light: #1e293b;
+--dark: #f8fafc;
+--gray: #94a3b8;
+--gray-light: #334155;
+--gray-dark: #cbd5e1;
+--bg: #0f172a;
+--card-bg: #1e293b;
+--border: #334155;
+--shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+--shadow-hover: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+}
+
+body {
+font-family: 'Inter', sans-serif;
+font-size: var(--font-size-base);
+line-height: 1.4;
+color: var(--dark);
+background: var(--bg);
+padding: 15px;
+min-height: 100vh;
+transition: var(--transition);
+}
+
+.container {
+max-width: 1600px;
+margin: 0 auto;
+background: var(--card-bg);
+border-radius: var(--radius-lg);
+box-shadow: var(--shadow);
+padding: 15px;
+display: flex;
+flex-direction: column;
+gap: 15px;
+transition: var(--transition);
+}
+
+header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 5px;
+padding-bottom: 10px;
+border-bottom: 1px solid var(--border);
+}
+
+h1 {
+color: var(--primary);
+font-size: 20px;
+font-weight: 700;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.description {
+color: var(--gray);
+font-size: 13px;
+margin-top: 3px;
+}
+
+.theme-switch {
+display: flex;
+align-items: center;
+gap: 6px;
+cursor: pointer;
+padding: 6px 12px;
+border-radius: 50px;
+background: var(--light);
+transition: var(--transition);
+font-size: 13px;
+font-weight: 500;
+}
+
+.main-content {
+display: grid;
+grid-template-columns: 5fr 6fr;
+gap: 15px;
+}
+
+.input-panel {
+display: flex;
+flex-direction: column;
+gap: 15px;
+}
+
+.card {
+background: var(--card-bg);
+border-radius: var(--radius-lg);
+padding: 12px;
+box-shadow: var(--shadow);
+transition: var(--transition);
+border: 1px solid var(--border);
+position: relative;
+}
+
+.input-group h3 {
+margin-bottom: 8px;
+color: var(--primary);
+font-size: 16px;
+font-weight: 600;
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+
+.input-group h3 span {
+font-size: 12px;
+color: var(--gray);
+font-weight: normal;
+}
+
+textarea {
+width: 100%;
+height: 140px;
+padding: 10px;
+border: 1px solid var(--border);
+border-radius: var(--radius-md);
+font-family: monospace;
+font-size: 14px;
+resize: vertical;
+background: var(--light);
+color: var(--dark);
+transition: var(--transition);
+margin-bottom: 8px;
+}
+
+.input-actions {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding-top: 6px;
+border-top: 1px solid var(--border);
+}
+
+.data-count {
+font-size: 13px;
+font-weight: 600;
+color: var(--primary);
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.input-toolbar {
+display: flex;
+gap: 6px;
+}
+
+.toolbar-btn {
+background: transparent;
+color: var(--gray);
+border: 1px solid var(--border);
+padding: 4px 8px;
+font-size: 12px;
+border-radius: var(--radius-sm);
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 4px;
+transition: var(--transition);
+white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+background: var(--light);
+color: var(--primary);
+border-color: var(--primary);
+}
+
+.toolbar-btn i {
+font-size: 11px;
+}
+
+.file-input {
+display: none;
+}
+
+.options-grid {
+display: grid;
+grid-template-columns: 1fr;
+gap: 12px;
+}
+
+.option-group {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.option-group:last-child {
+border-bottom: none;
+padding-bottom: 0;
+}
+
+.option-group h3 {
+margin-bottom: 8px;
+color: var(--primary);
+font-size: 15px;
+font-weight: 600;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.divider-options {
+display: flex;
+flex-direction: column;
+gap: 6px;
+}
+
+.divider-options label {
+display: flex;
+align-items: center;
+gap: 8px;
+cursor: pointer;
+font-size: 14px;
+padding: 8px;
+border-radius: var(--radius-md);
+background: var(--light);
+transition: var(--transition);
+}
+
+.button-group {
+display: flex;
+justify-content: center;
+flex-wrap: wrap;
+gap: 10px;
+margin: 10px 0 5px;
+}
+
+/* 通用按钮样式 */
+button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 6px;
+color: white;
+border: none;
+padding: 8px 14px;
+border-radius: var(--radius-md);
+cursor: pointer;
+font-size: 14px;
+font-weight: 600;
+transition: var(--transition);
+position: relative;
+overflow: hidden;
+}
+
+button i {
+transition: transform 0.3s ease, color 0.3s ease;
+}
+
+button::after {
+content: '';
+position: absolute;
+top: 50%;
+left: 50%;
+width: 0;
+height: 0;
+background: rgba(255, 255, 255, 0.1);
+border-radius: 50%;
+transform: translate(-50%, -50%);
+transition: width 0.6s ease, height 0.6s ease;
+}
+
+button:hover::after {
+width: 200px;
+height: 200px;
+}
+
+#compareBtn {
+background: #eab308;
+}
+#compareBtn:hover {
+transform: scale(1.05);
+background: #ca8a04;
+box-shadow: 0 4px 8px rgba(234, 179, 8, 0.3);
+}
+#compareBtn:active {
+transform: scale(0.98);
+}
+#compareBtn:hover i {
+transform: rotate(15deg);
+}
+
+#clearBtn {
+background: var(--clear-color);
+}
+#clearBtn:hover {
+background: #ef4444;
+box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+/* 导出Excel按钮 - 强制背景色修复 */
+#exportBtn {
+background-color: var(--export-color); 
+background: var(--export-color);
+color: white !important;
+font-size: 13px;
+padding: 6px 14px;
+border: 1px solid transparent;
+}
+#exportBtn:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+filter: brightness(1.1);
+}
+
+/* 复制结果按钮 - 强制背景色修复 */
+#copyResultBtn {
+background-color: var(--copy-bg-start);
+background: linear-gradient(135deg, var(--copy-bg-start), var(--copy-bg-end));
+color: white !important;
+font-size: 13px;
+padding: 6px 14px;
+border: 1px solid transparent;
+box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3);
+}
+#copyResultBtn:hover {
+transform: translateY(-1px);
+box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+filter: brightness(1.1);
+}
+
+.results-panel {
+display: flex;
+flex-direction: column;
+gap: 15px;
+}
+
+.results-dialog {
+background: var(--card-bg);
+border-radius: var(--radius-lg);
+padding: 12px;
+box-shadow: var(--shadow);
+display: flex;
+flex-direction: column;
+height: 100%;
+border: 1px solid var(--border);
+}
+
+.results-dialog h2 {
+color: var(--primary);
+font-size: 18px;
+margin-bottom: 10px;
+padding-bottom: 8px;
+border-bottom: 1px solid var(--border);
+display: flex;
+align-items: center;
+justify-content: space-between;
+width: 100%;
+gap: 15px;
+}
+
+.result-header-group {
+display: flex;
+align-items: center;
+gap: 10px;
+}
+
+.result-actions-group {
+display: flex;
+gap: 8px;
+margin-left: auto;
+}
+
+.result-tabs {
+display: flex;
+gap: 8px;
+margin-bottom: 10px;
+flex-wrap: wrap;
+overflow-x: auto;
+padding-bottom: 5px;
+}
+
+.result-tab {
+/* 修复上下不对称：使用自然行高和均衡Padding，并去除位移 */
+padding: 7px 14px; /* 上下Padding均衡 */
+border-radius: var(--radius-md);
+cursor: pointer;
+font-size: 13px;
+font-weight: 600;
+line-height: 1.4; /* 使用自然行高，给文字呼吸空间，避免视觉上浮 */
+transition: all 0.2s ease-in-out;
+display: inline-flex; 
+align-items: center; 
+justify-content: center; /* 增加水平居中 */
+gap: 6px;
+white-space: nowrap;
+border: 1px solid transparent;
+position: relative;
+transform: none; /* 默认无位移 */
+}
+
+/* 确保图标大小与文字一致，防止高度撑开 */
+.result-tab i {
+font-size: 13px;
+line-height: 1;
+}
+
+/* 各类别的默认颜色样式 (未选中状态) */
+.result-tab[data-tab="unique1"] { color: var(--unique1-color); background-color: rgba(124, 58, 237, 0.05); border-color: rgba(124, 58, 237, 0.1); }
+.result-tab[data-tab="unique2"] { color: var(--unique2-color); background-color: rgba(30, 64, 175, 0.05); border-color: rgba(30, 64, 175, 0.1); }
+.result-tab[data-tab="common"] { color: var(--common-color); background-color: rgba(15, 118, 110, 0.05); border-color: rgba(15, 118, 110, 0.1); }
+.result-tab[data-tab="duplicates1"] { color: var(--duplicate1-color); background-color: rgba(234, 88, 12, 0.05); border-color: rgba(234, 88, 12, 0.1); }
+.result-tab[data-tab="duplicates2"] { color: var(--duplicate2-color); background-color: rgba(220, 38, 38, 0.05); border-color: rgba(220, 38, 38, 0.1); }
+
+/* 选中状态 */
+.result-tab.active {
+/* 不使用 translateY，避免视觉上的“悬浮不对称” */
+z-index: 10;
+box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 仅轻微阴影 */
+}
+
+/* 各类别的选中状态 (实心背景) */
+.result-tab[data-tab="unique1"].active {
+background-color: var(--unique1-color);
+color: white !important;
+border-color: var(--unique1-color);
+box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
+}
+
+.result-tab[data-tab="unique2"].active {
+background-color: var(--unique2-color);
+color: white !important;
+border-color: var(--unique2-color);
+box-shadow: 0 2px 6px rgba(30, 64, 175, 0.3);
+}
+
+.result-tab[data-tab="common"].active {
+background-color: var(--common-color);
+color: white !important;
+border-color: var(--common-color);
+box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3);
+}
+
+.result-tab[data-tab="duplicates1"].active {
+background-color: var(--duplicate1-color);
+color: white !important;
+border-color: var(--duplicate1-color);
+box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
+}
+
+.result-tab[data-tab="duplicates2"].active {
+background-color: var(--duplicate2-color);
+color: white !important;
+border-color: var(--duplicate2-color);
+box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+}
+
+.result-content {
+flex: 1;
+overflow-y: auto;
+font-family: monospace;
+font-size: 14px;
+white-space: pre-wrap;
+padding: 10px;
+border-radius: var(--radius-md);
+border: 1px solid var(--border);
+line-height: 1.5;
+min-height: 250px;
+transition: opacity 0.3s ease;
+position: relative;
+}
+
+.result-content.unique1 { background-color: rgba(124, 58, 237, 0.05); border-left: 3px solid var(--unique1-color); }
+.result-content.unique2 { background-color: rgba(30, 64, 175, 0.05); border-left: 3px solid var(--unique2-color); }
+.result-content.common { background-color: rgba(15, 118, 110, 0.05); border-left: 3px solid var(--common-color); }
+.result-content.duplicates1 { background-color: rgba(234, 88, 12, 0.05); border-left: 3px solid var(--duplicate1-color); }
+.result-content.duplicates2 { background-color: rgba(220, 38, 38, 0.05); border-left: 3px solid var(--duplicate2-color); }
+
+.result-placeholder {
+color: var(--gray);
+text-align: center;
+margin-top: 30%;
+font-size: 15px;
+}
+
+.count-badge {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+color: white;
+padding: 1px 5px;
+border-radius: 10px;
+font-size: 11px;
+font-weight: 600;
+background-color: var(--gray-dark); 
+}
+
+.result-tab.active .count-badge {
+background-color: rgba(255, 255, 255, 0.3);
+}
+
+.result-tab[data-tab="unique1"]:not(.active) .count-badge { background-color: var(--unique1-color); }
+.result-tab[data-tab="unique2"]:not(.active) .count-badge { background-color: var(--unique2-color); }
+.result-tab[data-tab="common"]:not(.active) .count-badge { background-color: var(--common-color); }
+.result-tab[data-tab="duplicates1"]:not(.active) .count-badge { background-color: var(--duplicate1-color); }
+.result-tab[data-tab="duplicates2"]:not(.active) .count-badge { background-color: var(--duplicate2-color); }
+
+input[type="radio"], input[type="checkbox"] {
+appearance: none;
+-webkit-appearance: none;
+width: 16px;
+height: 16px;
+border: 2px solid var(--border);
+border-radius: 50%;
+outline: none;
+cursor: pointer;
+position: relative;
+flex-shrink: 0;
+}
+
+input[type="checkbox"] { border-radius: 3px; }
+input[type="radio"]:checked, input[type="checkbox"]:checked {
+border-color: var(--primary);
+background: var(--primary);
+}
+
+input[type="radio"]:checked:before {
+content: "";
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 6px;
+height: 6px;
+background: white;
+border-radius: 50%;
+}
+
+input[type="checkbox"]:checked:before {
+content: "✓";
+position: absolute;
+top: -2px;
+left: 1px;
+color: white;
+font-size: 11px;
+font-weight: bold;
+}
+
+.data-inputs {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 15px;
+}
+
+.loading {
+display: flex;
+justify-content: center;
+align-items: center;
+height: 80px;
+}
+
+.loading-spinner {
+width: 30px;
+height: 30px;
+border: 3px solid rgba(234, 179, 8, 0.2);
+border-left-color: #eab308;
+border-radius: 50%;
+animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.duplicate-count {
+color: var(--gray);
+font-size: 12px;
+margin-left: 8px;
+user-select: none;
+}
+
+.toast {
+position: fixed;
+top: 20px;
+left: 50%;
+transform: translateX(-50%);
+background: var(--dark);
+color: var(--light);
+padding: 10px 20px;
+border-radius: 8px;
+z-index: 9999;
+box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+display: flex;
+align-items: center;
+gap: 8px;
+opacity: 0;
+transition: opacity 0.3s ease, transform 0.3s ease;
+pointer-events: none;
+}
+.toast.show {
+opacity: 1;
+transform: translateX(-50%) translateY(10px);
+}
+.toast.error {
+background: var(--clear-color);
+color: white;
+}
+.toast.success {
+background: var(--export-color);
+color: white;
+}
+
+@media (max-width: 1200px) {
+.main-content { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+.data-inputs { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+body { padding: 10px; font-size: 13px; }
+.container { padding: 12px; }
+header { flex-direction: column; align-items: flex-start; gap: 8px; }
+h1 { font-size: 18px; }
+.button-group { flex-direction: column; }
+button { width: 100%; justify-content: center; }
+.results-dialog h2 { flex-direction: column; align-items: flex-start; gap: 10px; }
+.result-actions-group { margin-left: 0; width: 100%; justify-content: space-between; }
+.result-actions-group button { flex: 1; }
+.result-tabs { overflow-x: auto; }
+.input-actions { flex-direction: column; gap: 10px; align-items: flex-start; }
+.input-toolbar { width: 100%; justify-content: space-between; }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--light); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--gray); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #eab308; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div>
+<h1><i class="fas fa-code-compare"></i> 数据验证比对工具 v1.1.5 正式版</h1>
+<p class="description">快速找出数据中的相同值、不同值和重复值 | 支持文件导入与结果导出</p>
+</div>
+<div class="theme-switch" id="themeSwitch">
+<i class="fas fa-moon"></i>
+<span>暗色模式</span>
+</div>
+</header>
+
+<div class="main-content">
+<div class="input-panel">
+<div class="data-inputs">
+<div class="card">
+<div class="input-group">
+<h3><i class="fas fa-database"></i> 数据A <span></span></h3>
+<textarea id="dataSet1" placeholder="请输入第一组数据，每行一个值或用逗号分隔"></textarea>
+<div class="input-actions">
+<div class="data-count" id="count1">
+<i class="fas fa-list-ol"></i>
+<span>数量: 0</span>
+</div>
+<div class="input-toolbar">
+<!-- accept 属性增加 .xlsx, .xls -->
+<label for="file1" class="toolbar-btn" title="导入TXT/CSV/Excel文件">
+<i class="fas fa-file-import"></i> 导入
+</label>
+<input type="file" id="file1" class="file-input" accept=".txt,.csv,.xlsx,.xls">
+<button class="toolbar-btn" onclick="sortInput('dataSet1', 'asc')" title="升序排序 (A-Z)">
+<i class="fas fa-sort-alpha-down"></i>
+</button>
+<button class="toolbar-btn" onclick="sortInput('dataSet1', 'desc')" title="降序排序 (Z-A)">
+<i class="fas fa-sort-alpha-up"></i>
+</button>
+<button class="toolbar-btn" onclick="deduplicateInput('dataSet1')" title="去重">
+<i class="fas fa-filter"></i> 去重
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="input-group">
+<h3><i class="fas fa-database"></i> 数据B <span></span></h3>
+<textarea id="dataSet2" placeholder="请输入第二组数据，每行一个值或用逗号分隔"></textarea>
+<div class="input-actions">
+<div class="data-count" id="count2">
+<i class="fas fa-list-ol"></i>
+<span>数量: 0</span>
+</div>
+<div class="input-toolbar">
+<!-- accept 属性增加 .xlsx, .xls -->
+<label for="file2" class="toolbar-btn" title="导入TXT/CSV/Excel文件">
+<i class="fas fa-file-import"></i> 导入
+</label>
+<input type="file" id="file2" class="file-input" accept=".txt,.csv,.xlsx,.xls">
+<button class="toolbar-btn" onclick="sortInput('dataSet2', 'asc')" title="升序排序 (A-Z)">
+<i class="fas fa-sort-alpha-down"></i>
+</button>
+<button class="toolbar-btn" onclick="sortInput('dataSet2', 'desc')" title="降序排序 (Z-A)">
+<i class="fas fa-sort-alpha-up"></i>
+</button>
+<button class="toolbar-btn" onclick="deduplicateInput('dataSet2')" title="去重">
+<i class="fas fa-filter"></i> 去重
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="options-grid">
+<div class="option-group">
+<h3><i class="fas fa-cut"></i> 分隔方式</h3>
+<div class="divider-options">
+<label><input type="radio" name="dividerType" value="auto" checked> <i class="fas fa-magic"></i> 自动检测</label>
+<label><input type="radio" name="dividerType" value="newline"> <i class="fas fa-arrow-down"></i> 换行符</label>
+<label><input type="radio" name="dividerType" value="comma"> <i class="fas fa-comma"></i> 逗号</label>
+</div>
+</div>
+<div class="option-group">
+<h3><i class="fas fa-sliders-h"></i> 匹配设置</h3>
+<div class="divider-options">
+<label><input type="radio" name="matchType" value="exact" checked> <i class="fas fa-bullseye"></i> 精确匹配</label>
+<label><input type="radio" name="matchType" value="fuzzy"> <i class="fas fa-search"></i> 模糊匹配</label>
+<label><input type="checkbox" id="ignoreEmpty" checked> <i class="fas fa-ban"></i> 忽略空值</label>
+<label><input type="checkbox" id="trimValues" checked> <i class="fas fa-cut"></i> 修剪空格</label>
+<label><input type="checkbox" id="caseSensitive" checked> <i class="fas fa-font"></i> 区分大小写</label>
+</div>
+</div>
+</div>
+</div>
+
+<div class="button-group">
+<button id="compareBtn"><i class="fas fa-play-circle"></i> 开始对比</button>
+<button id="clearBtn"><i class="fas fa-broom"></i> 清除数据</button>
+</div>
+</div>
+
+<!-- 结果对话框 -->
+<div class="results-panel">
+<div class="card results-dialog">
+<h2>
+<div class="result-header-group">
+<i class="fas fa-chart-bar"></i> 对比结果
+</div>
+<div class="result-actions-group">
+<button id="copyResultBtn" title="复制当前结果" onclick="copyCurrentResult()">
+<i class="fas fa-copy"></i> 复制结果
+</button>
+<button id="exportBtn" title="导出Excel文件">
+<i class="fas fa-file-export"></i> 导出Excel
+</button>
+</div>
+</h2>
+
+<div class="result-tabs">
+<div class="result-tab active" data-tab="unique1"><i class="fas fa-star-of-life"></i> A组独占值 <span class="count-badge">0</span></div>
+<div class="result-tab" data-tab="unique2"><i class="fas fa-star-of-life"></i> B组独占值 <span class="count-badge">0</span></div>
+<div class="result-tab" data-tab="common"><i class="fas fa-venus-double"></i> 共有值 <span class="count-badge">0</span></div>
+<div class="result-tab" data-tab="duplicates1"><i class="fas fa-clone"></i> A组重复值 <span class="count-badge">0</span></div>
+<div class="result-tab" data-tab="duplicates2"><i class="fas fa-clone"></i> B组重复值 <span class="count-badge">0</span></div>
+</div>
+
+<div class="result-content">
+<div class="result-placeholder">
+<i class="fas fa-arrow-left" style="font-size: 20px; margin-bottom: 8px;"></i><br>
+点击"开始对比"查看分析结果
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast" class="toast"><i class="fas fa-info-circle"></i> <span>Message</span></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// DOM元素获取
+const compareBtn = document.getElementById('compareBtn');
+const clearBtn = document.getElementById('clearBtn');
+const exportBtn = document.getElementById('exportBtn');
+const themeSwitch = document.getElementById('themeSwitch');
+const dataSet1 = document.getElementById('dataSet1');
+const dataSet2 = document.getElementById('dataSet2');
+const count1 = document.getElementById('count1');
+const count2 = document.getElementById('count2');
+const resultContent = document.querySelector('.result-content');
+const resultTabs = document.querySelectorAll('.result-tab');
+const resultPlaceholder = document.querySelector('.result-placeholder');
+
+// Toast Notification Function
+function showToast(message, type = 'info') {
+const toast = document.getElementById('toast');
+const icon = toast.querySelector('i');
+const span = toast.querySelector('span');
+    
+span.textContent = message;
+toast.className = `toast show ${type}`;
+    
+if(type === 'error') icon.className = 'fas fa-exclamation-circle';
+else if(type === 'success') icon.className = 'fas fa-check-circle';
+else icon.className = 'fas fa-info-circle';
+
+setTimeout(() => {
+toast.classList.remove('show');
+}, 3000);
+}
+
+// 更新数据计数
+function updateDataCount() {
+const dividerType = document.querySelector('input[name="dividerType"]:checked').value;
+const ignoreEmpty = document.getElementById('ignoreEmpty').checked;
+const trimValues = document.getElementById('trimValues').checked;
+const caseSensitive = document.getElementById('caseSensitive').checked;
+
+const data1 = parseData(dataSet1.value, dividerType, ignoreEmpty, trimValues, caseSensitive);
+const data2 = parseData(dataSet2.value, dividerType, ignoreEmpty, trimValues, caseSensitive);
+
+count1.querySelector('span').textContent = `数量: ${data1.length}`;
+count2.querySelector('span').textContent = `数量: ${data2.length}`;
+}
+
+// 初始化时更新计数
+updateDataCount();
+
+// 监听数据变化
+dataSet1.addEventListener('input', updateDataCount);
+dataSet2.addEventListener('input', updateDataCount);
+
+// 监听选项变化
+document.querySelectorAll('input[name="dividerType"]').forEach(input => {
+input.addEventListener('change', updateDataCount);
+});
+
+document.getElementById('ignoreEmpty').addEventListener('change', updateDataCount);
+document.getElementById('trimValues').addEventListener('change', updateDataCount);
+document.getElementById('caseSensitive').addEventListener('change', updateDataCount);
+
+// 主题切换
+themeSwitch.addEventListener('click', function() {
+document.body.classList.toggle('dark-mode');
+
+if (document.body.classList.contains('dark-mode')) {
+themeSwitch.innerHTML = '<i class="fas fa-sun"></i> <span>亮色模式</span>';
+} else {
+themeSwitch.innerHTML = '<i class="fas fa-moon"></i> <span>暗色模式</span>';
+}
+});
+
+// 存储结果数据
+let results = {
+unique1: [],
+unique2: [],
+common: [],
+duplicates1: {},
+duplicates2: {}
+};
+
+// 标签切换事件
+resultTabs.forEach(tab => {
+tab.addEventListener('click', function() {
+resultTabs.forEach(t => t.classList.remove('active'));
+this.classList.add('active');
+showResult(this.dataset.tab);
+});
+});
+
+// 对比按钮点击事件
+compareBtn.addEventListener('click', function() {
+showLoading();
+
+setTimeout(() => {
+const dividerType = document.querySelector('input[name="dividerType"]:checked').value;
+const matchType = document.querySelector('input[name="matchType"]:checked').value;
+const ignoreEmpty = document.getElementById('ignoreEmpty').checked;
+const trimValues = document.getElementById('trimValues').checked;
+const caseSensitive = document.getElementById('caseSensitive').checked;
+
+const data1 = parseData(dataSet1.value, dividerType, ignoreEmpty, trimValues, caseSensitive);
+const data2 = parseData(dataSet2.value, dividerType, ignoreEmpty, trimValues, caseSensitive);
+
+results.unique1 = findUniqueInFirst(data1, data2, matchType);
+results.unique2 = findUniqueInSecond(data1, data2, matchType);
+results.common = findCommon(data1, data2, matchType);
+results.duplicates1 = findDuplicates(data1);
+results.duplicates2 = findDuplicates(data2);
+
+if (resultPlaceholder) {
+resultPlaceholder.style.display = 'none';
+}
+
+updateTabCounts();
+showResult('unique1');
+
+resultTabs.forEach((tab, index) => {
+if (index === 0) tab.classList.add('active');
+else tab.classList.remove('active');
+});
+}, 300);
+});
+
+// 清除按钮点击事件
+clearBtn.addEventListener('click', function() {
+dataSet1.value = '';
+dataSet2.value = '';
+results = { unique1: [], unique2: [], common: [], duplicates1: {}, duplicates2: {} };
+updateDataCount();
+resultContent.textContent = '';
+resultContent.className = 'result-content';
+if (resultPlaceholder) resultPlaceholder.style.display = 'block';
+resultTabs.forEach((tab, index) => {
+if (index === 0) tab.classList.add('active');
+else tab.classList.remove('active');
+});
+updateTabCounts(true);
+showToast('数据已清除', 'success');
+});
+
+// 导出Excel功能
+exportBtn.addEventListener('click', function() {
+if (results.unique1.length === 0 && results.unique2.length === 0 && results.common.length === 0 &&
+Object.keys(results.duplicates1).length === 0 && Object.keys(results.duplicates2).length === 0) {
+showToast('请先执行对比操作，然后再导出结果', 'error');
+return;
+}
+
+const wb = XLSX.utils.book_new();
+const originalData1 = parseData(dataSet1.value, 'auto', true, true, false);
+const originalData2 = parseData(dataSet2.value, 'auto', true, true, false);
+
+const originalDataSheet = XLSX.utils.aoa_to_sheet([
+['第一组原始数据', '第二组原始数据'],
+...Array(Math.max(originalData1.length, originalData2.length)).fill()
+.map((_, i) => [originalData1[i] || '', originalData2[i] || ''])
+]);
+XLSX.utils.book_append_sheet(wb, originalDataSheet, '原始数据');
+
+if (results.unique1.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['第一组独有值'], ...results.unique1.map(i => [i])]), '第一组独有值');
+if (results.unique2.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['第二组独有值'], ...results.unique2.map(i => [i])]), '第二组独有值');
+if (results.common.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['共有值'], ...results.common.map(i => [i])]), '共有值');
+if (Object.keys(results.duplicates1).length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['值', '出现次数'], ...Object.entries(results.duplicates1)]), '第一组重复值');
+if (Object.keys(results.duplicates2).length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['值', '出现次数'], ...Object.entries(results.duplicates2)]), '第二组重复值');
+
+XLSX.writeFile(wb, `数据对比结果_${new Date().toISOString().slice(0, 10)}.xlsx`);
+showToast('Excel 导出成功', 'success');
+});
+
+function showResult(type) {
+resultContent.className = 'result-content';
+resultContent.classList.add(type);
+resultContent.innerHTML = '';
+
+switch(type) {
+case 'unique1':
+if (results.unique1.length === 0) resultContent.textContent = "第一组数据中没有独有的值";
+else results.unique1.forEach(item => { const d = document.createElement('div'); d.textContent = item; resultContent.appendChild(d); });
+break;
+case 'unique2':
+if (results.unique2.length === 0) resultContent.textContent = "第二组数据中没有独有的值";
+else results.unique2.forEach(item => { const d = document.createElement('div'); d.textContent = item; resultContent.appendChild(d); });
+break;
+case 'common':
+if (results.common.length === 0) resultContent.textContent = "两组数据中没有相同的值";
+else results.common.forEach(item => { const d = document.createElement('div'); d.textContent = item; resultContent.appendChild(d); });
+break;
+case 'duplicates1':
+if (Object.keys(results.duplicates1).length === 0) resultContent.textContent = "第一组数据中没有重复的值";
+else Object.entries(results.duplicates1).forEach(([val, cnt]) => {
+const d = document.createElement('div'); d.style.display = 'flex'; d.style.alignItems = 'center';
+const s1 = document.createElement('span'); s1.textContent = val;
+const s2 = document.createElement('span'); s2.className = 'duplicate-count'; s2.textContent = `(出现 ${cnt} 次)`;
+d.appendChild(s1); d.appendChild(s2); resultContent.appendChild(d);
+});
+break;
+case 'duplicates2':
+if (Object.keys(results.duplicates2).length === 0) resultContent.textContent = "第二组数据中没有重复的值";
+else Object.entries(results.duplicates2).forEach(([val, cnt]) => {
+const d = document.createElement('div'); d.style.display = 'flex'; d.style.alignItems = 'center';
+const s1 = document.createElement('span'); s1.textContent = val;
+const s2 = document.createElement('span'); s2.className = 'duplicate-count'; s2.textContent = `(出现 ${cnt} 次)`;
+d.appendChild(s1); d.appendChild(s2); resultContent.appendChild(d);
+});
+break;
+}
+resultContent.style.opacity = '0';
+setTimeout(() => { resultContent.style.opacity = '1'; }, 50);
+}
+
+function updateTabCounts(clear = false) {
+const tabCounts = {
+'unique1': results.unique1.length,
+'unique2': results.unique2.length,
+'common': results.common.length,
+'duplicates1': Object.keys(results.duplicates1).length,
+'duplicates2': Object.keys(results.duplicates2).length
+};
+
+resultTabs.forEach(tab => {
+const tabType = tab.dataset.tab;
+let countSpan = tab.querySelector('.count-badge');
+
+if (clear) {
+if (countSpan) countSpan.textContent = '0';
+return;
+}
+
+if (!countSpan) {
+countSpan = document.createElement('span');
+countSpan.className = 'count-badge';
+tab.appendChild(countSpan);
+}
+countSpan.textContent = tabCounts[tabType];
+});
+}
+
+function parseData(data, dividerType, ignoreEmpty, trimValues, caseSensitive) {
+let result = [];
+if (dividerType === 'auto') result = data.includes(',') ? data.split(',') : data.split('\n');
+else if (dividerType === 'comma') result = data.split(',');
+else result = data.split('\n');
+
+return result.map(item => {
+if (trimValues) item = item.trim();
+if (!caseSensitive) item = item.toLowerCase();
+return item;
+}).filter(item => !ignoreEmpty || item !== '');
+}
+
+function findUniqueInFirst(data1, data2, matchType) {
+return data1.filter(item1 => {
+if (matchType === 'exact') return !data2.includes(item1);
+else return !data2.some(item2 => item1.includes(item2) || item2.includes(item1));
+});
+}
+
+function findUniqueInSecond(data1, data2, matchType) {
+return data2.filter(item2 => {
+if (matchType === 'exact') return !data1.includes(item2);
+else return !data1.some(item1 => item2.includes(item1) || item1.includes(item2));
+});
+}
+
+function findCommon(data1, data2, matchType) {
+if (matchType === 'exact') return [...new Set(data1.filter(item => data2.includes(item)))];
+else {
+const common = new Set();
+data1.forEach(item1 => {
+if (data2.some(item2 => item1.includes(item2) || item2.includes(item1))) common.add(item1);
+});
+return Array.from(common);
+}
+}
+
+function findDuplicates(data) {
+const counts = {};
+data.forEach(item => { counts[item] = (counts[item] || 0) + 1; });
+const duplicates = {};
+for (const [value, count] of Object.entries(counts)) {
+if (count > 1) duplicates[value] = count;
+}
+return duplicates;
+}
+
+function showLoading() {
+resultContent.innerHTML = `<div class="loading"><div class="loading-spinner"></div></div>`;
+}
+
+// 增强版文件导入处理 (支持 Excel)
+function setupFileInput(fileInputId, targetTextAreaId) {
+const fileInput = document.getElementById(fileInputId);
+const targetTextArea = document.getElementById(targetTextAreaId);
+fileInput.addEventListener('change', function(e) {
+const file = e.target.files[0];
+if (!file) return;
+
+const fileName = file.name.toLowerCase();
+const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+
+if (isExcel) {
+// 处理 Excel 文件
+const reader = new FileReader();
+reader.onload = function(e) {
+try {
+const data = new Uint8Array(e.target.result);
+const workbook = XLSX.read(data, {type: 'array'});
+const firstSheetName = workbook.SheetNames[0];
+const worksheet = workbook.Sheets[firstSheetName];
+// 将工作表转换为 JSON 数组 (header: 1 返回二维数组)
+const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+// 扁平化数组并过滤空值
+const flatData = jsonData.flat().filter(cell => cell !== undefined && cell !== null && String(cell).trim() !== '');
+targetTextArea.value = flatData.join('\n');
+targetTextArea.dispatchEvent(new Event('input'));
+showToast(`文件 "${file.name}" 导入成功 (读取了 ${flatData.length} 条数据)`, 'success');
+fileInput.value = '';
+} catch (error) {
+console.error(error);
+showToast('读取 Excel 文件失败', 'error');
+}
+};
+reader.onerror = function() { showToast('读取文件失败', 'error'); };
+reader.readAsArrayBuffer(file);
+} else {
+// 处理 TXT/CSV 文件
+const reader = new FileReader();
+reader.onload = function(e) {
+targetTextArea.value = e.target.result;
+targetTextArea.dispatchEvent(new Event('input'));
+showToast(`文件 "${file.name}" 导入成功`, 'success');
+fileInput.value = '';
+};
+reader.onerror = function() { showToast('读取文件失败', 'error'); };
+reader.readAsText(file);
+}
+});
+}
+setupFileInput('file1', 'dataSet1');
+setupFileInput('file2', 'dataSet2');
+
+window.sortInput = function(textareaId, order) {
+const textarea = document.getElementById(textareaId);
+if (!textarea.value.trim()) { showToast('没有数据可排序', 'info'); return; }
+const lines = textarea.value.split(/\r?\n/);
+lines.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+if (order === 'desc') lines.reverse();
+textarea.value = lines.join('\n');
+textarea.dispatchEvent(new Event('input'));
+showToast(order === 'asc' ? '已按 A-Z 升序排序' : '已按 Z-A 降序排序', 'success');
+};
+
+window.deduplicateInput = function(textareaId) {
+const textarea = document.getElementById(textareaId);
+if (!textarea.value.trim()) { showToast('没有数据可去重', 'info'); return; }
+textarea.value = [...new Set(textarea.value.split(/\r?\n/))].join('\n');
+textarea.dispatchEvent(new Event('input'));
+showToast('已去除重复行', 'success');
+};
+
+window.copyCurrentResult = function() {
+const activeTab = document.querySelector('.result-tab.active');
+if (!activeTab) return;
+
+const type = activeTab.dataset.tab;
+const resultContainer = document.querySelector('.result-content');
+
+if (resultContainer.querySelector('.result-placeholder') || resultContainer.querySelector('.loading')) {
+showToast('没有可复制的结果', 'error');
+return;
+}
+
+let textToCopy = '';
+if (type.startsWith('duplicates')) {
+const spans = resultContainer.querySelectorAll('div > span:first-child');
+spans.forEach(span => textToCopy += span.textContent + '\n');
+} else {
+const divs = resultContainer.querySelectorAll('div');
+divs.forEach(div => textToCopy += div.textContent + '\n');
+}
+
+if (!textToCopy.trim()) {
+showToast('结果为空', 'error');
+return;
+}
+
+navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+showToast('结果已复制到剪贴板', 'success');
+}).catch(err => {
+console.error('复制失败:', err);
+showToast('复制失败，请手动复制', 'error');
+});
+};
+});
+</script>
+</body>
 </html>
